@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1
+VERSION=0.1.1
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -300,7 +300,7 @@ if [[ -f "$ZONEFILE_OLD" ]]; then
   if [[ $( wc -w <<< "$ZONELOG_DEL" ) -gt 0 ]]; then 
     while IFS=# read RECORD RECORD_TTL RECORD_TYPE RECORD_VALUE; do
       RECORD_VALUE="$( xargs <<< "$RECORD_VALUE" | sed -e 's/^"//g' -e 's/"$//g' )"
-      echo "${TIMESTAMP}.000 action=\"removed\" record=\"${RECORD}\" record_ttl=\"${RECORD_TTL}\" record_type=\"${RECORD_TYPE}\" record_value=\"${RECORD_VALUE}\"" >> "$CHANGELOG"
+      echo "${TIMESTAMP}.000 action=\"removed\" zone=\"${ZONE_NAME}\" zone_view=\"${ZONE_VIEW}\" record=\"${RECORD}\" record_ttl=\"${RECORD_TTL}\" record_type=\"${RECORD_TYPE}\" record_value=\"${RECORD_VALUE}\"" >> "$CHANGELOG"
     done <<< "$ZONELOG_DEL"
     [[ $REPORT_DELETED == 'yes' ]] && SEND_REPORT='yes' && SEND_DELETED='yes'
   fi
@@ -308,7 +308,7 @@ if [[ -f "$ZONEFILE_OLD" ]]; then
   if [[ $( wc -w <<< "$ZONELOG_NEW" ) -gt 0 ]]; then
     while IFS=# read RECORD RECORD_TTL RECORD_TYPE RECORD_VALUE; do
       RECORD_VALUE="$( xargs <<< "$RECORD_VALUE" | sed -e 's/^"//g' -e 's/"$//g' )"
-      echo "${TIMESTAMP}.001 action=\"added\" record=\"${RECORD}\" record_ttl=\"${RECORD_TTL}\" record_type=\"${RECORD_TYPE}\" record_value=\"${RECORD_VALUE}\"" >> "$CHANGELOG"
+      echo "${TIMESTAMP}.001 action=\"added\" zone=\"${ZONE_NAME}\" zone_view=\"${ZONE_VIEW}\" record=\"${RECORD}\" record_ttl=\"${RECORD_TTL}\" record_type=\"${RECORD_TYPE}\" record_value=\"${RECORD_VALUE}\"" >> "$CHANGELOG"
     done <<< "$ZONELOG_NEW"
     [[ $REPORT_NEW == 'yes' ]] && SEND_REPORT='yes' && SEND_NEW='yes'
   fi
