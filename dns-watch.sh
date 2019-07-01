@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1.1
+VERSION=0.1.2
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -49,6 +49,8 @@ CONFIG FILE:
     NS_AXFR         NS server to use for the zone transfer
     RECORD_TYPES    comma separated list of the query types
                     for example: A, AAAA, CNAME, MX, NS, SRV
+    IGNORE_TTL      yes = do not report TTL changes;
+                    no  = report TTL changes;
     REPORT_DELETED  yes = report deleted/modified DNS records;
                     no  = do not report deleted/modified DNS records
     REPORT_NEW      yes = report new DNS records;
@@ -239,6 +241,7 @@ EMAIL_SUBJECT="$(   parse_ini "$CONFIGFILE" 'EMAIL_SUBJECT'   )"
 LOG_DIR="$(         parse_ini "$CONFIGFILE" 'LOG_DIR'         | sed -e 's;/$;;g' )"
 NS_AXFR="$(         parse_ini "$CONFIGFILE" 'NS_AXFR'         )"
 RECORD_TYPES="$(    parse_ini "$CONFIGFILE" 'RECORD_TYPES'    | tr '[:lower:]' '[:upper:]' | sed -e 's/[[:space:]]*,[[:space:]]*/|/g' )"
+IGNORE_TTL="$(      parse_ini "$CONFIGFILE" 'IGNORE_TTL'      | tr '[:upper:]' '[:lower:]' )"
 REPORT_DELETED="$(  parse_ini "$CONFIGFILE" 'REPORT_DELETED'  | tr '[:upper:]' '[:lower:]' )"
 REPORT_NEW="$(      parse_ini "$CONFIGFILE" 'REPORT_NEW'      | tr '[:upper:]' '[:lower:]' )"
 ZONE_TSIG_KEY="$(   parse_ini "$CONFIGFILE" 'ZONE_TSIG_KEY'   )"
@@ -282,8 +285,13 @@ if [[ -f "$ZONEFILE_OLD" ]]; then
   ## Normalize old and new zone file, and compare them
   ## 
 
-  ZONE_BUFFER_NEW="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_NEW" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$2"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
-  ZONE_BUFFER_OLD="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_OLD" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$2"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
+  if [[ $IGNORE_TTL == 'yes' ]]; then
+    ZONE_BUFFER_NEW="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_NEW" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
+    ZONE_BUFFER_OLD="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_OLD" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
+  else
+    ZONE_BUFFER_NEW="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_NEW" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$2"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
+    ZONE_BUFFER_OLD="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_OLD" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$2"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
+  fi
 
   ZONELOG_NEW="$( diff --changed-group-format='%<' --unchanged-group-format='' <( echo "$ZONE_BUFFER_NEW" ) <( echo "$ZONE_BUFFER_OLD" ) | sort )"
   ZONELOG_DEL="$( diff --changed-group-format='%<' --unchanged-group-format='' <( echo "$ZONE_BUFFER_OLD" ) <( echo "$ZONE_BUFFER_NEW" ) | sort )"
