@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1.2
+VERSION=0.1.3
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -276,6 +276,15 @@ ZONEFILE_OLD="${LOG_DIR}/${ZONE_VIEW}/${ZONE_NAME}.axfr"
 
 [[ -z "$ZONE_TSIG_KEY" ]] && AXFR="AXFR" || AXFR="-y $ZONE_TSIG_KEY AXFR"
 dig $AXFR $ZONE_NAME @"$NS_AXFR" > "$ZONEFILE_NEW"
+RET1=$?
+
+egrep -q '^; Transfer failed' "$ZONEFILE_NEW"
+RET2=$?
+
+if [ $RET1 -ne 0 -o $RET2 -eq 0 ]; then
+  rm -f "$ZONEFILE_NEW"
+  fatal_error "[main] zone transfer for '${ZONE_VIEW}/${ZONE_NAME}' failed!"
+fi
 
 ## There's no ZONEFILE_OLD in the first run, so there'll be nothing to report
 ##
