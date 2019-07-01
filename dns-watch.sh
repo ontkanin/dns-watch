@@ -295,8 +295,8 @@ if [[ -f "$ZONEFILE_OLD" ]]; then
   ## 
 
   if [[ $IGNORE_TTL == 'yes' ]]; then
-    ZONE_BUFFER_NEW="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_NEW" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
-    ZONE_BUFFER_OLD="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_OLD" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
+    ZONE_BUFFER_NEW="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_NEW" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"##"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
+    ZONE_BUFFER_OLD="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_OLD" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"##"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
   else
     ZONE_BUFFER_NEW="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_NEW" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$2"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
     ZONE_BUFFER_OLD="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_OLD" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$2"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
