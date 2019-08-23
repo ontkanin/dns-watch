@@ -28,6 +28,8 @@ CONFIG FILE:
     NS_AXFR         NS server to use for the zone transfer
     RECORD_TYPES    comma separated list of the query types
                     for example: A, AAAA, CNAME, MX, NS, SRV
+    IGNORE_CASE     yes = case insensitive monitoring
+                    no  = case sensitive monitoring
     IGNORE_TTL      yes = do not report TTL changes;
                     no  = report TTL changes;
     REPORT_DELETED  yes = report deleted/modified DNS records;
@@ -54,6 +56,7 @@ ZONE_TSIG_KEY   = default-transfer-linux:L7Ta5zAtXxGEY7qnwRmrqf==
 LOG_DIR         = /var/log/dns-watch
 NS_AXFR         = xfrout.example.com
 RECORD_TYPES    = A,AAAA,CNAME,MX,NS,SRV
+IGNORE_CASE     = no
 IGNORE_TTL      = no
 REPORT_NEW      = yes
 REPORT_DELETED  = yes

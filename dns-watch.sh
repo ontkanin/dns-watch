@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1.3
+VERSION=0.1.4
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -49,6 +49,8 @@ CONFIG FILE:
     NS_AXFR         NS server to use for the zone transfer
     RECORD_TYPES    comma separated list of the query types
                     for example: A, AAAA, CNAME, MX, NS, SRV
+    IGNORE_CASE     yes = case insensitive monitoring
+                    no  = case sensitive monitoring
     IGNORE_TTL      yes = do not report TTL changes;
                     no  = report TTL changes;
     REPORT_DELETED  yes = report deleted/modified DNS records;
@@ -241,6 +243,7 @@ EMAIL_SUBJECT="$(   parse_ini "$CONFIGFILE" 'EMAIL_SUBJECT'   )"
 LOG_DIR="$(         parse_ini "$CONFIGFILE" 'LOG_DIR'         | sed -e 's;/$;;g' )"
 NS_AXFR="$(         parse_ini "$CONFIGFILE" 'NS_AXFR'         )"
 RECORD_TYPES="$(    parse_ini "$CONFIGFILE" 'RECORD_TYPES'    | tr '[:lower:]' '[:upper:]' | sed -e 's/[[:space:]]*,[[:space:]]*/|/g' )"
+IGNORE_CASE="$(     parse_ini "$CONFIGFILE" 'IGNORE_CASE'     | tr '[:upper:]' '[:lower:]' )"
 IGNORE_TTL="$(      parse_ini "$CONFIGFILE" 'IGNORE_TTL'      | tr '[:upper:]' '[:lower:]' )"
 REPORT_DELETED="$(  parse_ini "$CONFIGFILE" 'REPORT_DELETED'  | tr '[:upper:]' '[:lower:]' )"
 REPORT_NEW="$(      parse_ini "$CONFIGFILE" 'REPORT_NEW'      | tr '[:upper:]' '[:lower:]' )"
@@ -302,8 +305,10 @@ if [[ -f "$ZONEFILE_OLD" ]]; then
     ZONE_BUFFER_OLD="$( egrep -v -e "^;" -e "^$" "$ZONEFILE_OLD" | egrep "\sIN\s+(${RECORD_TYPES})\s" | awk '{ out=""; for(i=5;i<=NF;i++) { out=out" "$i }; print $1"#"$2"#"$4"#"out"#" }' | sed -e 's/\.#/#/g' | sort -u )"
   fi
 
-  ZONELOG_NEW="$( diff --changed-group-format='%<' --unchanged-group-format='' <( echo "$ZONE_BUFFER_NEW" ) <( echo "$ZONE_BUFFER_OLD" ) | sort )"
-  ZONELOG_DEL="$( diff --changed-group-format='%<' --unchanged-group-format='' <( echo "$ZONE_BUFFER_OLD" ) <( echo "$ZONE_BUFFER_NEW" ) | sort )"
+  [[ $IGNORE_CASE == 'yes' ]] && I_CASE='-i' || I_CASE=''
+
+  ZONELOG_NEW="$( diff $I_CASE --changed-group-format='%<' --unchanged-group-format='' <( echo "$ZONE_BUFFER_NEW" ) <( echo "$ZONE_BUFFER_OLD" ) | sort )"
+  ZONELOG_DEL="$( diff $I_CASE --changed-group-format='%<' --unchanged-group-format='' <( echo "$ZONE_BUFFER_OLD" ) <( echo "$ZONE_BUFFER_NEW" ) | sort )"
 
   ## Log DNS record changes into changelog, and send mail report if needed
   ##
