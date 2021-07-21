@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1.4
+VERSION=0.1.5
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -109,7 +109,7 @@ send_report_email() {
     echo '<html dir="ltr" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">'
     echo '<head>'
     echo '  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'
-    echo '  <meta name="description" xml:lang="en" content="Notice of Claimed Infringement" />'
+    echo '  <meta name="description" xml:lang="en" content="DNS Record Change Monitoring" />'
     echo '  <meta name="MSSmartTagsPreventParsing" content="TRUE" />'
     echo "  <title>${EMAIL_SUBJECT}</title>"
     echo '  <style type="text/css">'
