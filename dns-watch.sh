@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1.5
+VERSION=0.1.6
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -281,7 +281,7 @@ ZONEFILE_OLD="${LOG_DIR}/${ZONE_VIEW}/${ZONE_NAME}.axfr"
 dig $AXFR $ZONE_NAME @"$NS_AXFR" > "$ZONEFILE_NEW"
 RET1=$?
 
-egrep -q '^; Transfer failed' "$ZONEFILE_NEW"
+egrep -q '^(; Transfer failed|;; communications error)' "$ZONEFILE_NEW"
 RET2=$?
 
 if [ $RET1 -ne 0 -o $RET2 -eq 0 ]; then
