@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1.6
+VERSION=0.1.7
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -278,13 +278,24 @@ ZONEFILE_NEW="${LOG_DIR}/${ZONE_VIEW}/${ZONE_NAME}.axfr.new"
 ZONEFILE_OLD="${LOG_DIR}/${ZONE_VIEW}/${ZONE_NAME}.axfr"
 
 [[ -z "$ZONE_TSIG_KEY" ]] && AXFR="AXFR" || AXFR="-y $ZONE_TSIG_KEY AXFR"
-dig $AXFR $ZONE_NAME @"$NS_AXFR" > "$ZONEFILE_NEW"
-RET1=$?
 
-egrep -q '^(; Transfer failed|;; communications error)' "$ZONEFILE_NEW"
-RET2=$?
+MAX_AXFR_ATTEMPTS=3; AXFR_ATTEMPT=0
+while [[ $AXFR_ATTEMPTS -lt $MAX_AXFR_ATTEMPTS ]]; do
+  dig $AXFR $ZONE_NAME @"$NS_AXFR" > "$ZONEFILE_NEW"
+  RET1=$?
 
-if [ $RET1 -ne 0 -o $RET2 -eq 0 ]; then
+  egrep -q '^(; Transfer failed|;; communications error)' "$ZONEFILE_NEW"
+  RET2=$?
+
+  if [ $RET1 -ne 0 -o $RET2 -eq 0 ]; then
+    ((AXFR_ATTEMPT++))
+    sleep 10
+  else
+    break
+  fi
+done
+
+if [[ $AXFR_ATTEMPT -ge $MAX_AXFR_ATTEMPTS ]]; then
   rm -f "$ZONEFILE_NEW"
   fatal_error "[main] zone transfer for '${ZONE_VIEW}/${ZONE_NAME}' failed!"
 fi
