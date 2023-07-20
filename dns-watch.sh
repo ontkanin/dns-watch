@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1.7
+VERSION=0.1.8
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -277,11 +277,11 @@ fi
 ZONEFILE_NEW="${LOG_DIR}/${ZONE_VIEW}/${ZONE_NAME}.axfr.new"
 ZONEFILE_OLD="${LOG_DIR}/${ZONE_VIEW}/${ZONE_NAME}.axfr"
 
-[[ -z "$ZONE_TSIG_KEY" ]] && AXFR="AXFR" || AXFR="-y $ZONE_TSIG_KEY AXFR"
+[[ -z "$ZONE_TSIG_KEY" ]] && AXFR=( 'AXFR' ) || AXFR=( '-y' "$ZONE_TSIG_KEY" 'AXFR' )
 
 MAX_AXFR_ATTEMPTS=3; AXFR_ATTEMPT=0
 while [[ $AXFR_ATTEMPT -lt $MAX_AXFR_ATTEMPTS ]]; do
-  dig $AXFR $ZONE_NAME @"$NS_AXFR" > "$ZONEFILE_NEW"
+  dig "${AXFR[@]}" $ZONE_NAME @"$NS_AXFR" > "$ZONEFILE_NEW"
   RET1=$?
 
   egrep -q '^(; Transfer failed|;; communications error)' "$ZONEFILE_NEW"
