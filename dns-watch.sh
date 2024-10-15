@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-VERSION=0.1.8
+VERSION=0.1.9
 SCRIPT_NAME="DNS Record Change Monitor v${VERSION}"
 
 ##############################################################################
@@ -57,6 +57,8 @@ CONFIG FILE:
                     no  = do not report deleted/modified DNS records
     REPORT_NEW      yes = report new DNS records;
                     no  = do not report new records
+    REPORT_EXCLUDE  regex pattern for excluding specific records from 
+                    the reports (must not contain ^, $, or #)
     ZONE_TSIG_KEY   TSIG key for the zone transfer
     ZONE_NAME       name of the DNS zone to monitor
     ZONE_VIEW       name of the DNS view the zone belongs to
@@ -247,6 +249,7 @@ IGNORE_CASE="$(     parse_ini "$CONFIGFILE" 'IGNORE_CASE'     | tr '[:upper:]' '
 IGNORE_TTL="$(      parse_ini "$CONFIGFILE" 'IGNORE_TTL'      | tr '[:upper:]' '[:lower:]' )"
 REPORT_DELETED="$(  parse_ini "$CONFIGFILE" 'REPORT_DELETED'  | tr '[:upper:]' '[:lower:]' )"
 REPORT_NEW="$(      parse_ini "$CONFIGFILE" 'REPORT_NEW'      | tr '[:upper:]' '[:lower:]' )"
+REPORT_EXCLUDE="$(  parse_ini "$CONFIGFILE" 'REPORT_EXCLUDE'  )"
 ZONE_TSIG_KEY="$(   parse_ini "$CONFIGFILE" 'ZONE_TSIG_KEY'   )"
 ZONE_NAME="$(       parse_ini "$CONFIGFILE" 'ZONE_NAME'       | tr '[:upper:]' '[:lower:]' )"
 ZONE_VIEW="$(       parse_ini "$CONFIGFILE" 'ZONE_VIEW'       | tr '[:upper:]' '[:lower:]' )"
@@ -350,7 +353,15 @@ if [[ -f "$ZONEFILE_OLD" ]]; then
     [[ -z "$EMAIL_FROM"    ]] && EMAIL_FROM='root'
     [[ -z "$EMAIL_TO"      ]] && [[ -z "$EMAIL_CC" ]] && [[ -z "$EMAIL_BCC" ]] && EMAIL_TO='root'
     [[ -z "$EMAIL_SUBJECT" ]] && EMAIL_SUBJECT="DNS report for $( tr '[:lower:]' '[:upper:]' <<< ${ZONE_NAME} ) in $( tr '[:lower:]' '[:upper:]' <<< ${ZONE_VIEW} ) view"
-    send_report_email
+    
+    ## Exclude from email reports
+    if [[ -n "$REPORT_EXCLUDE" ]]; then
+      ZONELOG_DEL="$( grep $I_CASE -vE "^${REPORT_EXCLUDE}#" <<< "$ZONELOG_DEL" )"
+      ZONELOG_NEW="$( grep $I_CASE -vE "^${REPORT_EXCLUDE}#" <<< "$ZONELOG_NEW" )"
+      [[ -z "$ZONELOG_DEL" ]] && SEND_DELETED='no'
+      [[ -z "$ZONELOG_NEW" ]] && SEND_NEW='no'
+    fi
+    [[ "$SEND_DELETED" == "yes" || "$SEND_NEW" == "yes" ]] && send_report_email
   fi
 fi
 
